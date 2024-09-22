@@ -6,7 +6,7 @@ _Stack_Limit = _stack_start - _Stack_Size;
 
 /*-----Initialization of heap------*/
 _Heap_Start  = _end_noinit;
-_Healp_limit = _stack_start - _Stack_Size;
+_Heap_limit = _stack_start - _Stack_Size;
 
 /*---------Entry Point----------*/
 ENTRY(Reset_Handler)
@@ -34,6 +34,7 @@ SECTIONS
 	} >FLASH
 	
 	_sidata = LOADADDR(.data);
+	/*returns the addr where the data is loaded initially in ROM/FLASH*/
 	
 	.data : ALIGN(4)
 	{

@@ -79,7 +79,7 @@ LOAD /Applications/ArmGNUToolchain/13.2.Rel1/arm-none-eabi/bin/../lib/gcc/arm-no
                 0x00000400                        _Stack_Size = 0x400
                 0x2001fc00                        _Stack_Limit = (_stack_start - _Stack_Size)
                 0x20000200                        _Heap_Start = _end_noinit
-                0x2001fc00                        _Healp_limit = (_stack_start - _Stack_Size)
+                0x2001fc00                        _Heap_limit = (_stack_start - _Stack_Size)
 
 .isr_vector     0x08000000      0x188
  FILL mask 0xff
