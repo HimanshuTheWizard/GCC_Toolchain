@@ -1,69 +1,76 @@
+# Variables definition
 CC = arm-none-eabi-gcc
 MACH = cortex-m4
 INC_DIR = ../Include
 OUTPUT_DIR = ../Output
-AR = ar
-ARFLAGS = rcs
-LIBRARY_NAME = libmylib.a
 OUTPUT_SRC_DIR = $(OUTPUT_DIR)/Src
 OUTPUT_STARTUP_DIR = $(OUTPUT_DIR)/Startup
 SRC_DIR = ../Src
+TARGET = final.elf
+AR = arm-none-eabi-ar
+ARFLAGS = rcs
+LIBRARY_NAME = libmylib.a
 APPL_SRC = $(SRC_DIR)/Application
 SYSCALL_SRC = $(SRC_DIR)/SysLib
 STARTUP_SRC = ../Startup
+
+# Optional feature flag (e.g. ENABLE=1 in command line)
 FEATURE_FLAG =
-
-CFLAGS = -c -mcpu=$(MACH) -mthumb -std=gnu11 -O0 -I$(INC_DIR)
-#LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs --specs=nosys.specs -T linker.ld -L./$(OUTPUT_DIR) -lmylib -Wl,-Map=$(OUTPUT_DIR)/final.map
-LDFLAGS = -mcpu=$(MACH) -mthumb -mfloat-abi=soft --specs=nano.specs --specs=nosys.specs -T linker.ld -Wl,-Map=$(OUTPUT_DIR)/final.map
-
-#OBJS = $(OUTPUT_SRC_DIR)/main.o $(OUTPUT_SRC_DIR)/led.o $(OUTPUT_STARTUP_DIR)/stm32_startup.o $(OUTPUT_SRC_DIR)/syscalls.o
-OBJS = $(OUTPUT_SRC_DIR)/main.o $(OUTPUT_SRC_DIR)/adc.o $(OUTPUT_SRC_DIR)/gpio.o $(OUTPUT_SRC_DIR)/timer.o $(OUTPUT_STARTUP_DIR)/startup.o $(OUTPUT_SRC_DIR)/syscalls.o
-
-#not phony as it does not require explicit mention
-#this is default goal as it appeared as first target in makefile
-#if no input is given from make, this target is excuted by default.
-all: final.elf
-
-#this enables the user to use certain flags in 
-#src file to perform conditional compilation
 ifdef ENABLE
 FEATURE_FLAG = -DENABLE_FEATURE
 endif
 
-# Add FEATURE_FLAG to the CFLAGS
-CFLAGS += $(FEATURE_FLAG)
+CFLAGS = -mcpu=$(MACH) -mthumb -Wall -O2 -std=gnu11 -I$(INC_DIR) $(FEATURE_FLAG)
+LDFLAGS = -mcpu=$(MACH) -mthumb --specs=nano.specs --specs=nosys.specs \
+          -T linker.ld -Wl,-Map=$(OUTPUT_DIR)/final.map
 
-$(OUTPUT_DIR) $(OUTPUT_STARTUP_DIR) $(OUTPUT_SRC_DIR):
-	@mkdir -p $@
+# Collect source files
+APP_SRCS = $(wildcard $(APPL_SRC)/*.c)
+SYS_SRCS = $(wildcard $(SYSCALL_SRC)/*.c)
+STARTUP_SRCS = $(wildcard $(STARTUP_SRC)/*.c)
 
-#main.o:main.c	
-$(OUTPUT_SRC_DIR)/%.o: $(APPL_SRC)/%.c | $(OUTPUT_SRC_DIR)
-	$(CC) $(CFLAGS) -o $@ $<
-#	$(CC) $(CFLAGS) -o target  prerequisite
-#   $(CC) $(CFLAGS) -o main.o main.c
-#   arm-none-eabi-objdump.exe
-#	arm-none-eabi-gcc -S/-c -mcpu=cortex-m4 -mthumb -std=gnu11 -O0 main.c -o main.s/main.o
+# Create output object paths
+APP_OBJS = $(patsubst $(APPL_SRC)/%.c, $(OUTPUT_SRC_DIR)/%.o, $(APP_SRCS))
+SYS_OBJS = $(patsubst $(SYSCALL_SRC)/%.c, $(OUTPUT_SRC_DIR)/%.o, $(SYS_SRCS))
+STARTUP_OBJS = $(patsubst $(STARTUP_SRC)/%.c, $(OUTPUT_STARTUP_DIR)/%.o, $(STARTUP_SRCS))
 
-#----------this is example of explicit rule.------------
-$(OUTPUT_STARTUP_DIR)/startup.o: $(STARTUP_SRC)/startup.c | $(OUTPUT_STARTUP_DIR)
-	$(CC) $(CFLAGS) -o $@ $<
-#--------------------------------------------------------
+OBJS = $(APP_OBJS) $(SYS_OBJS) $(STARTUP_OBJS)
 
-$(OUTPUT_SRC_DIR)/syscalls.o: $(SYSCALL_SRC)/syscalls.c | $(OUTPUT_SRC_DIR)	
-	$(CC) $(CFLAGS) -o $@ $<
+.PHONY: all clean prepare library load
 
-final.elf: $(OBJS)
-	$(CC) $(LDFLAGS) -o $(OUTPUT_DIR)/$@ $^
+# Default target
+all: prepare $(OUTPUT_DIR)/$(TARGET)
 
-$(LIBRARY_NAME): $(OBJS)
-	$(AR) $(ARFLAGS) -v $(OUTPUT_DIR)/$@ $^
+# Command to create sub-directory in output directory
+prepare:
+	@mkdir -p $(OUTPUT_SRC_DIR) $(OUTPUT_STARTUP_DIR)
 
-.PHONY: library clean load
-library: $(LIBRARY_NAME) $(OBJS)
+# Pattern rules for compiling sources
+$(OUTPUT_SRC_DIR)/%.o: $(APPL_SRC)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
 
+$(OUTPUT_SRC_DIR)/%.o: $(SYSCALL_SRC)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+$(OUTPUT_STARTUP_DIR)/%.o: $(STARTUP_SRC)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Linking final executable
+$(OUTPUT_DIR)/$(TARGET): $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+# Archiving into static library
+$(OUTPUT_DIR)/$(LIBRARY_NAME): $(OBJS)
+	$(AR) $(ARFLAGS) $@ $^
+
+# Create library only
+library: prepare $(OUTPUT_DIR)/$(LIBRARY_NAME)
+
+# Clean output files
 clean:
-	rm -rf $(OUTPUT_SRC_DIR)/*.o $(OUTPUT_STARTUP_DIR)/*.o $(OUTPUT_DIR)/*.elf $(OUTPUT_DIR)/*.map $(OUTPUT_DIR)/*.a
-	
+	rm -rf $(OUTPUT_SRC_DIR) $(OUTPUT_STARTUP_DIR) $(OUTPUT_DIR)/$(TARGET) \
+           $(OUTPUT_DIR)/$(LIBRARY_NAME) $(OUTPUT_DIR)/*.map
+
+# Flash via OpenOCD
 load:
 	openocd -f board/stm32f4discovery.cfg

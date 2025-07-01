@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug STM32F4 via ST-LINK",
+            "type": "cortex-debug",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "executable": "Output/program.elf",
+            "servertype": "openocd",
+            "runToEntryPoint": "main",
+            "device": "STM32F407VG",
+            "interface": "swd",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            "runToMain": true
+        }
+    ]
+}

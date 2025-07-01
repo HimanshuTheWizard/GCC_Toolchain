@@ -1,0 +1,6 @@
+Output/Src/SysLib/syscalls.o
+Output/Src/Application/timer.o
+Output/Src/Application/gpio.o
+Output/Src/Application/adc.o
+Output/Src/Application/main.o
+Output/Startup/startup.o

@@ -1,0 +1,7 @@
+{
+  "label": "Flash STM32F407",
+  "type": "shell",
+  "command": "make flash",
+  "group": "build",
+  "problemMatcher": []
+}
