@@ -73,4 +73,4 @@ clean:
 
 # Flash via OpenOCD
 load:
-	openocd -f board/stm32f4discovery.cfg
+	openocd -f board/stm32f4discovery.cfg -c "program ../Output/final.elf verify reset exit"

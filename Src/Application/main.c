@@ -43,6 +43,8 @@ void main(void)
 	//Init LED
 	LED_Init(GPIOD, 12);
 
+	EXTI_Registering_function(&EXTI_Button_Press_Callback);
+
 	//Enable Switch in EXTI interrupt mode
 	EXTI_Interrupt_Initialization(GPIOA, 0);
 
@@ -59,7 +61,7 @@ void main(void)
 	}
 #endif
 
-#if 1
+#if 0
 	/* ===========================================================
 	 * LED and Push Button Interface - polling mode
 	 * ==========================================================*/
@@ -89,11 +91,11 @@ void main(void)
 	}
 #endif
 
-#if 0
+#if 1
 	/* ===========================================================
 	 * Toggle LED with SysTick Timer
 	 * ==========================================================*/
-	uint32_t time_unit = 1000;							//ms
+	uint32_t time_unit = 100;							//ms
 
 	//enable clock for LED D3 - PORT-D(12)
 	RCC->AHB1ENR 	|= (1<<3);
